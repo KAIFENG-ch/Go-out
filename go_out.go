@@ -48,7 +48,7 @@ func New() *Engine {
 		},
 	}
 	engine.RouterGroup.engine = engine
-	engine.pool.New = func() any {
+	engine.pool.New = func() interface{} {
 		return engine.AllocateContext()
 	}
 	return engine
@@ -59,6 +59,7 @@ func Default() *Engine {
 	return engine
 }
 
+// AllocateContext 为进程分配堆栈空间
 func (e *Engine) AllocateContext() *Context {
 	v := make(params, 0, e.maxParams)
 	skippedNode := make([]skippedNode, 0)
@@ -75,6 +76,13 @@ func (e *Engine) AllocateContext() *Context {
 //err = http.ListenAndServe(address, e.Handlers)
 //return
 //}
+
+func (h HandlerChain) Last() HandlerFunc {
+	if len(h) > 0 {
+		return h[len(h)-1]
+	}
+	return nil
+}
 
 //ServeHttp 处理程序接口
 func (e *Engine) ServeHttp(w http.ResponseWriter, req *http.Request) {
@@ -163,7 +171,7 @@ func redirectFixedPath(c *Context, root *node, trailingSlash bool) bool {
 	req := c.request
 	rPath := req.URL.Path
 	if fixedPath, ok := root.findCaseInsensitivePath(cleanPath(rPath), trailingSlash); ok {
-		req.URL.Path = bytesconv.BytesToString(fixedPath)
+		req.URL.Path = BytesToString(fixedPath)
 		redirectRequest(c)
 		return true
 	}
@@ -171,19 +179,32 @@ func redirectFixedPath(c *Context, root *node, trailingSlash bool) bool {
 }
 
 func serveError(c *Context, code int, defaultMsg []byte) {
-	// TODO
+	c.writermem.status = code
+	c.Next()
+	if c.writermem.Written() {
+		return
+	}
+	if c.writermem.status == code {
+		//c.writermem.Header()["Content-Type"] = []string{"text/plain"}
+		_, err := c.Writer.Write(defaultMsg)
+		if err != nil {
+			debugPrint("")
+		}
+		return
+	}
+	c.writermem.WriteHeaderNow()
 }
 
 func redirectRequest(c *Context) {
-	//req := c.request
+	req := c.request
 	//rPath := req.URL.Path
-	//rURL := req.URL.String()
-	//
-	//code := http.StatusMovedPermanently
-	//if req.Method != http.MethodGet {
-	//	code = http.StatusTemporaryRedirect
-	//}
-	////debugPrint("redirecting request %d: %s --> %s", code, rPath, rURL)
-	//http.Redirect(c.Writer, req, rURL, code)
-	//c.writermem.WriteHeaderNow()
+	rURL := req.URL.String()
+
+	code := http.StatusMovedPermanently
+	if req.Method != http.MethodGet {
+		code = http.StatusTemporaryRedirect
+	}
+	//debugPrint("redirecting request %d: %s --> %s", code, rPath, rURL)
+	http.Redirect(c.Writer, req, rURL, code)
+	c.writermem.WriteHeaderNow()
 }
