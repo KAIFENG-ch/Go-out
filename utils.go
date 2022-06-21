@@ -21,3 +21,8 @@ func lastChar(str string) uint8 {
 	}
 	return str[len(str)-1]
 }
+
+func cleanPath(path string) string {
+	// todo
+	return ""
+}
