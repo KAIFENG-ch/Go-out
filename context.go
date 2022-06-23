@@ -1,31 +1,14 @@
 package Go_out
 
-import "net/http"
+import (
+	"math"
+	"net/http"
+)
 
 const (
 	noWritten     = -1
 	defaultStatus = http.StatusOK
 )
-
-type ResponseWriter interface {
-	Header() http.Header
-
-	Write([]byte) (int, error)
-
-	WriteHeader(statusCode int)
-
-	WriteHeaderNow()
-}
-
-type responseWriter struct {
-	http.ResponseWriter
-	size   int
-	status int
-}
-
-func (r responseWriter) WriteHeaderNow() {
-
-}
 
 type ErrorType int64
 
@@ -36,6 +19,8 @@ type Error struct {
 }
 
 type errorMsg []*Error
+
+const abortIndex int8 = math.MaxInt8 >> 1
 
 type Context struct {
 	writermem    responseWriter
@@ -76,6 +61,14 @@ func (c *Context) Next() {
 		c.Handlers[c.Index](c)
 		c.Index++
 	}
+}
+
+func (c *Context) IsAborted() bool {
+	return c.Index >= abortIndex
+}
+
+func (c *Context) Abort() {
+	c.Index = abortIndex
 }
 
 func (r *responseWriter) Written() bool {

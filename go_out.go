@@ -1,6 +1,8 @@
 package Go_out
 
 import (
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"net/http"
 	"path"
 	"sync"
@@ -37,6 +39,7 @@ type Engine struct {
 	RedirectTrailingSlash  bool
 	RedirectFixedPath      bool
 	HandleMethodNotAllowed bool
+	UseH2C                 bool
 }
 
 func New() *Engine {
@@ -59,6 +62,14 @@ func Default() *Engine {
 	return engine
 }
 
+func (e *Engine) Handler() http.Handler {
+	if !e.UseH2C {
+		return e
+	}
+	h2s := &http2.Server{}
+	return h2c.NewHandler(e, h2s)
+}
+
 // AllocateContext 为进程分配堆栈空间
 func (e *Engine) AllocateContext() *Context {
 	v := make(params, 0, e.maxParams)
@@ -70,12 +81,20 @@ func (e *Engine) AllocateContext() *Context {
 	}
 }
 
-//func (e *Engine) Run(addr ...string) (err error) {
-//	defer func() {}()
-//address :=
-//err = http.ListenAndServe(address, e.Handlers)
-//return
-//}
+func (e *Engine) Run(addr ...string) (err error) {
+	defer func() { debugPrintError(err) }()
+	address := resolveAddr(addr)
+	debugPrint("Listen and serving HTTP on %s\n", address)
+	err = http.ListenAndServe(address, e.Handler())
+	return
+}
+
+func (e *Engine) Use(middleware ...HandlerFunc) IRoutes {
+	e.RouterGroup.Use(middleware...)
+	// TODO
+
+	return e
+}
 
 func (h HandlerChain) Last() HandlerFunc {
 	if len(h) > 0 {
@@ -85,7 +104,7 @@ func (h HandlerChain) Last() HandlerFunc {
 }
 
 //ServeHttp 处理程序接口
-func (e *Engine) ServeHttp(w http.ResponseWriter, req *http.Request) {
+func (e *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := e.pool.Get().(*Context)
 	c.request = req
 	c.Reset()
