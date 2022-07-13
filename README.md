@@ -57,4 +57,11 @@ func (group *RouterGroup) combineHandlers(handlers HandlersChain) HandlersChain 
 
 ```
 这里的finalSize是将旧的handler和新的handler连接，然后对这个handler数量进行一个判断，如果超过64则会推出，然后用copy方法创建新的切片。
+```
+func (group *RouterGroup) calculateAbsolutePath(relativePath string) string {
+	return joinPaths(group.basePath, relativePath)
+}
+```
+之后我们会将绝对路径转换为相对路径，这样就可以在原有handler的基础上调用下一个handler
 
+既然New了一个engine对象，然后我们就要用这个engine来处理请求，这里就涉及到了我们的Context对象，Context在中文中的含义为上下文,在Go的标准库中，Context被用作进程上下文之间的切换
