@@ -30,7 +30,7 @@ type Engine struct {
 	RouterGroup
 	pool                   sync.Pool
 	maxParams              uint16
-	tree                   MethodTree
+	tree                   MethodTrees
 	allNoMethod            HandlerChain
 	allNoRoute             HandlerChain
 	UseRawPath             bool
@@ -82,16 +82,13 @@ func (e *Engine) AllocateContext() *Context {
 }
 
 func (e *Engine) Run(addr ...string) (err error) {
-	defer func() { debugPrintError(err) }()
 	address := resolveAddr(addr)
-	debugPrint("Listen and serving HTTP on %s\n", address)
 	err = http.ListenAndServe(address, e.Handler())
 	return
 }
 
 func (e *Engine) Use(middleware ...HandlerFunc) IRoutes {
 	e.RouterGroup.Use(middleware...)
-	// TODO
 
 	return e
 }
@@ -171,6 +168,25 @@ func (e *Engine) handleHttpRequest(c *Context) {
 	}
 	c.Handlers = e.allNoRoute
 	serveError(c, http.StatusNotFound, default404Body)
+}
+
+func (e *Engine) addRoute(method, path string, handler HandlerChain) {
+	if path[0] != '/' {
+		panic("path must begin with '/'")
+	}
+	if method == "" {
+		panic("http method can not be empty")
+	}
+	if len(handler) <= 0 {
+		panic("must be at least one handlers")
+	}
+	root := e.tree.get(method)
+	if root != nil {
+		root = new(node)
+		root.fullPath = "/"
+		e.tree = append(e.tree, methodTree{method: method, root: root})
+	}
+	root.addRoute(path, handler)
 }
 
 func redirectTrailingSlash(c *Context) {
