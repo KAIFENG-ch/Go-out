@@ -64,4 +64,31 @@ func (group *RouterGroup) calculateAbsolutePath(relativePath string) string {
 ```
 之后我们会将绝对路径转换为相对路径，这样就可以在原有handler的基础上调用下一个handler
 
-既然New了一个engine对象，然后我们就要用这个engine来处理请求，这里就涉及到了我们的Context对象，Context在中文中的含义为上下文,在Go的标准库中，Context被用作进程上下文之间的切换
+既然New了一个engine对象，然后我们就要用这个engine来处理请求，这里就涉及到了我们的Context对象，Context在中文中的含义为上下文,在Go的标准库中，Context被用作进程上下文之间的切换,
+而在我们的gout中，context可以被理解为一个请求的接受与处理中心，它通过接收用户的请求来完成上下文handler之间的切换
+我们可以来看看context的实现
+```
+type Context struct {
+	writermem responseWriter
+	Request   *http.Request	 // 请求对象
+	Writer    ResponseWriter // 响应对象
+	Params   Params 		 // 路由参数 /user/:id 这个id
+	handlers HandlersChain	 // 中间件数组 
+	index    int8 		// 当前执行中间件的下标
+	fullPath string  	// 请求的完整路径
+
+	engine       *Engine
+	params       *Params
+	skippedNodes *[]skippedNode 
+
+	mu sync.RWMutex 	// 保证Keys map的线程安全
+	Keys map[string]any // 对每一个请求进行处理存储
+
+	Errors errorMsgs 	// 存储错误的列表
+	Accepted []string
+	queryCache url.Values // 存放url请求参数
+	formCache url.Values  // 存放form参数
+	sameSite http.SameSite
+}
+```
+这里可以看到，context中
