@@ -5,13 +5,6 @@ import (
 	"regexp"
 )
 
-var (
-	regEnLetter = regexp.MustCompile("^[A-Z]+$")
-	//methods     = []string{
-	//	http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut,
-	//}
-)
-
 type (
 	RouterGroup struct {
 		Handlers HandlerChain
@@ -37,6 +30,20 @@ func (group *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
 	return group.returnObj()
 }
 
+var (
+	regEnLetter = regexp.MustCompile("^[A-Z]+$")
+	//methods     = []string{
+	//	http.MethodGet, http.MethodPost, http.MethodDelete, http.MethodPut,
+	//}
+)
+
+func (group *RouterGroup) handle(httpMethod, relativePath string, handlers HandlerChain) IRoutes {
+	absolutePath := group.calculateAbsolutePath(relativePath)
+	handlers = group.combineHandler(handlers)
+	group.engine.addRoute(httpMethod, absolutePath, handlers)
+	return group.returnObj()
+}
+
 func (group *RouterGroup) Group(relativePath string, handler ...HandlerFunc) *RouterGroup {
 	return &RouterGroup{
 		Handlers: group.combineHandler(handler),
@@ -56,23 +63,23 @@ func (group *RouterGroup) Handle(httpMethod string, relativePath string, handler
 	if matched := regEnLetter.MatchString(httpMethod); !matched {
 		panic("http method" + httpMethod + "is not valid")
 	}
-	return group.Handle(httpMethod, relativePath, handlers...)
+	return group.handle(httpMethod, relativePath, handlers)
 }
 
 func (group *RouterGroup) GET(relativePath string, handlerFunc ...HandlerFunc) IRoutes {
-	return group.Handle(http.MethodGet, relativePath, handlerFunc...)
+	return group.handle(http.MethodGet, relativePath, handlerFunc)
 }
 
 func (group *RouterGroup) POST(relativePath string, handlerFunc ...HandlerFunc) IRoutes {
-	return group.Handle(http.MethodPost, relativePath, handlerFunc...)
+	return group.handle(http.MethodPost, relativePath, handlerFunc)
 }
 
 func (group *RouterGroup) DELETE(relativePath string, handlerFunc ...HandlerFunc) IRoutes {
-	return group.Handle(http.MethodDelete, relativePath, handlerFunc...)
+	return group.handle(http.MethodDelete, relativePath, handlerFunc)
 }
 
 func (group *RouterGroup) PUT(relativePath string, handlerFunc ...HandlerFunc) IRoutes {
-	return group.Handle(http.MethodPut, relativePath, handlerFunc...)
+	return group.handle(http.MethodPut, relativePath, handlerFunc)
 }
 
 func (group *RouterGroup) combineHandler(handlers HandlerChain) HandlerChain {

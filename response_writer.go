@@ -1,6 +1,10 @@
 package Go_out
 
-import "net/http"
+import (
+	"io"
+	"net/http"
+	"strconv"
+)
 
 type ResponseWriter interface {
 	Header() http.Header
@@ -27,18 +31,21 @@ type responseWriter struct {
 }
 
 func (r *responseWriter) Status() int {
-	//TODO implement me
-	panic("implement me")
+	return r.status
 }
 
-func (r *responseWriter) WriteString(i int) (int, error) {
-	//TODO implement me
-	panic("implement me")
+func (r *responseWriter) WriteString(s int) (n int, err error) {
+	r.WriteHeaderNow()
+	n, err = io.WriteString(r.ResponseWriter, strconv.Itoa(s))
+	r.size += n
+	return
 }
 
 func (r *responseWriter) Pusher() http.Pusher {
-	//TODO implement me
-	panic("implement me")
+	if pusher, ok := r.ResponseWriter.(http.Pusher); ok {
+		return pusher
+	}
+	return nil
 }
 
 func (r *responseWriter) reset(writer http.ResponseWriter) {

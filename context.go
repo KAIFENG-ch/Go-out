@@ -50,6 +50,27 @@ func (c *Context) Reset() {
 	*c.skippedNodes = (*c.skippedNodes)[:0]
 }
 
+func (c *Context) Copy() *Context {
+	cp := Context{
+		writermem: c.writermem,
+		request: c.request,
+		engine: c.engine,
+		Params: c.Params,
+	}
+	cp.writermem.ResponseWriter = nil
+	cp.Writer = &cp.writermem
+	cp.Index = abortIndex
+	cp.Handlers = nil
+	cp.Keys = map[string]interface{}{}
+	for k, v := range c.Keys {
+		cp.Keys[k] = v
+	}
+	paramCopy := make([]Param, len(cp.Params))
+	copy(paramCopy, cp.Params)
+	cp.Params = paramCopy
+	return &cp
+}
+
 func (c *Context) Handler() HandlerFunc {
 	return c.Handlers.Last()
 }
