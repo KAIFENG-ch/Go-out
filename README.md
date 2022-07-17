@@ -503,3 +503,7 @@ func (c *conn) serve(ctx context.Context) {
         ...
     }
 ```
+总而言之，gout相当于http的优势
+1.前缀树查找减少时间复杂度
+2.中间件
+3.Context进程池，减少上下文切换开销
