@@ -21,7 +21,6 @@ func hello() {
 这样我们看到Default这个函数，里面就是调用到了New这个方法并封装了Logger和Recover两个中间件，这样我们在聚焦New函数，可以看到我们New函数里面实例化了一个Engine引擎
 ```
 func New() *Engine {
-	debugPrintWARNINGNew()
 	engine := &Engine{ 
 		RouterGroup: RouterGroup{ 
 			Handlers: nil,
