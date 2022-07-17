@@ -11,7 +11,7 @@ import (
 func hello() {
   r := gout.Default()
   r.GET("/hello", func(c *gin.Context) {
-    c.JSON(200, "pong")
+    c.JSON(200, "hello")
   })
   _ = r.Run("8080")
 }
