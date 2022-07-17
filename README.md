@@ -124,7 +124,7 @@ func (group *RouterGroup) handle(httpMethod, relativePath string, handlers Handl
 ```
 这里涉及到gout框架的一个核心：前缀路由树。前缀树是将路由的公共前缀保存在节点中，从根节点开始通过公共节点
 进行路由查找可以大大降低查找的时间复杂度
-GIN 中常用的声明路由的方式如下
+Gout 中常用的声明路由的方式如下
 ```
 // trees 路由树这一部分由一个带有method 和root字段的node列表维护
 // 每个node代表了路由树中的每一个节点
@@ -176,7 +176,7 @@ func (engine *Engine) addRoute(method, path string, handlers HandlersChain) {
 	if len(handler) <= 0 {
 		panic("must be at least one handlers")
 	}
-   // 如果开启了gin的debug模式，则对应处理
+   // 如果开启了gout的debug模式，则对应处理
    debugPrintRoute(method, path, handlers)
    // 根据请求方式获取对应的树的根
    // 每一个请求方法都有自己对应的一颗紧凑前缀树，这里通过请求方法拿到最顶部的根
@@ -363,7 +363,7 @@ func (engine *Engine) handleHTTPRequest(c *Context) {
         if value.handlers != nil {
             c.handlers = value.handlers
             c.fullPath = value.fullPath
-            c.Next() // 涉及到gin的中间件机制
+            c.Next() // 涉及到gout的中间件机制
             // 到这里时，请求已经处理完毕，返回的结果也存储在对应的结构体中了
             c.writermem.WriteHeaderNow()
             return
